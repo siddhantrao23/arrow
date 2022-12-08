@@ -52,20 +52,15 @@ jobs:
       {{ macros.github_checkout_arrow()|indent }}
       {{ macros.github_install_archery()|indent }}
       - name: Install Dependencies
-        run: brew bundle --file=arrow/cpp/Brewfile
+        run: |
+          brew install --overwrite git
+          brew bundle --file=arrow/cpp/Brewfile
       - name: Build C Data Interface lib
         run: |
           set -e
           arrow/ci/scripts/java_cdata_build.sh \
             $GITHUB_WORKSPACE/arrow \
             $GITHUB_WORKSPACE/arrow/java-native-build \
-            $GITHUB_WORKSPACE/arrow/java-dist
-      - name: Build C++ Libs
-        run: |
-          set -e
-          arrow/ci/scripts/java_jni_macos_build.sh \
-            $GITHUB_WORKSPACE/arrow \
-            $GITHUB_WORKSPACE/arrow/cpp-build \
             $GITHUB_WORKSPACE/arrow/java-dist
       - name: Compress into single artifact
         run: tar -cvzf arrow-shared-libs-macos.tar.gz arrow/java-dist/
@@ -93,6 +88,11 @@ jobs:
         run: |
           tar -xvzf arrow-shared-libs-macos.tar.gz
           tar -xvzf arrow-shared-libs-linux.tar.gz
+      - name: Copy the macos custom dylibs
+        run: |
+          cp -L $GITHUB_WORKSPACE/arrow/cpp/libgandiva_jni.dylib arrow/java-dist/
+          cp -L $GITHUB_WORKSPACE/arrow/cpp/libarrow_dataset_jni.dylib arrow/java-dist/
+          cp -L $GITHUB_WORKSPACE/arrow/cpp/libarrow_orc_jni.dylib arrow/java-dist/
       - name: Test that Shared Libraries Exist
         run: |
           test -f arrow/java-dist/libarrow_cdata_jni.dylib
